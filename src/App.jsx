@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { COLS, RED, YELLOW, createEmptyBoard, findWinningCells, getDropRow, isBoardFull } from './connect4.js'
 import { preloadBot, requestBotMove } from './nn/botController.js'
 import './App.css'
@@ -29,6 +29,8 @@ function App() {
   const [rounds, setRounds] = useState(0)
   const [botProgress, setBotProgress] = useState(null)
   const [difficulty, setDifficulty] = useState(DEFAULT_DIFFICULTY)
+  const [cardPos, setCardPos] = useState(null)
+  const dragOffset = useRef(null)
 
   const gameOver = winner !== null
   const botThinking = !gameOver && currentPlayer === YELLOW
@@ -129,6 +131,27 @@ function App() {
     setWinner(null)
     setWinningCells([])
     setLastMove(null)
+    setCardPos(null)
+  }
+
+  const handleCardDragStart = (event) => {
+    const card = event.currentTarget.closest('.result-card')
+    const rect = card.getBoundingClientRect()
+    dragOffset.current = { x: event.clientX - rect.left, y: event.clientY - rect.top }
+    setCardPos({ left: rect.left, top: rect.top })
+
+    const handleMove = (moveEvent) => {
+      setCardPos({
+        left: moveEvent.clientX - dragOffset.current.x,
+        top: moveEvent.clientY - dragOffset.current.y,
+      })
+    }
+    const handleUp = () => {
+      window.removeEventListener('pointermove', handleMove)
+      window.removeEventListener('pointerup', handleUp)
+    }
+    window.addEventListener('pointermove', handleMove)
+    window.addEventListener('pointerup', handleUp)
   }
 
   const resetMatch = () => {
@@ -262,8 +285,17 @@ function App() {
       </div>
 
       {gameOver && (
-        <div className="overlay" role="dialog" aria-modal="true">
-          <div className={`result-card ${winner === 'draw' ? 'draw' : winner === RED ? 'win' : 'lose'}`}>
+        <div className="overlay">
+          <div
+            className={`result-card ${winner === 'draw' ? 'draw' : winner === RED ? 'win' : 'lose'} ${cardPos ? 'dragged' : ''}`}
+            style={cardPos ? { left: cardPos.left, top: cardPos.top } : undefined}
+            role="dialog"
+            aria-modal="true"
+          >
+            <div className="result-card-handle" onPointerDown={handleCardDragStart}>
+              <span className="drag-grip" aria-hidden="true" />
+              <span className="drag-hint">Drag to move</span>
+            </div>
             <div className="result-discs">
               <span className="disc-icon red big" />
               <span className="disc-icon yellow big" />

@@ -444,8 +444,9 @@
 .overlay {
   position: fixed;
   inset: 0;
-  background: rgba(4, 7, 14, 0.72);
-  backdrop-filter: blur(3px);
+  /* No dimming/blur over the board itself -- only the result card, so dragging
+     it aside always reveals the final board underneath. */
+  pointer-events: none;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -463,12 +464,50 @@
 }
 
 .result-card {
+  pointer-events: auto;
   background: linear-gradient(160deg, #1c2b4d, #0d1830);
   border-radius: 22px;
-  padding: 34px 40px;
+  padding: 8px 40px 34px;
   text-align: center;
   box-shadow: 0 30px 60px -20px rgba(0, 0, 0, 0.8), inset 0 0 0 2px rgba(255, 255, 255, 0.08);
   animation: popIn 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+/* Once dragged, escape the overlay's centering flexbox and sit at an explicit
+   viewport position so it can be moved away from the final board. */
+.result-card.dragged {
+  position: fixed;
+  margin: 0;
+}
+
+.result-card-handle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 0 10px;
+  margin: 0 -40px 8px;
+  cursor: grab;
+  touch-action: none;
+}
+
+.result-card-handle:active {
+  cursor: grabbing;
+}
+
+.drag-grip {
+  width: 28px;
+  height: 4px;
+  border-radius: 2px;
+  background: rgba(244, 246, 251, 0.25);
+}
+
+.drag-hint {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: rgba(244, 246, 251, 0.35);
 }
 
 @keyframes popIn {
