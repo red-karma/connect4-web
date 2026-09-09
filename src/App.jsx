@@ -3,8 +3,15 @@ import { COLS, RED, YELLOW, createEmptyBoard, findWinningCells, getDropRow, isBo
 import { preloadBot, requestBotMove } from './nn/botController.js'
 import './App.css'
 
-const BOT_SIMULATIONS = 60
 const KEY_TO_COL = ['0', '1', '2', '3', '4', '5', '6']
+const DIFFICULTIES = [
+  { level: 1, label: 'Very Easy', simulations: 1 },
+  { level: 2, label: 'Easy', simulations: 10 },
+  { level: 3, label: 'Average', simulations: 40 },
+  { level: 4, label: 'Hard', simulations: 70 },
+  { level: 5, label: 'Very Hard', simulations: 100 },
+]
+const DEFAULT_DIFFICULTY = 3
 
 function cellKey(row, col) {
   return `${row}-${col}`
@@ -21,10 +28,12 @@ function App() {
   const [scores, setScores] = useState({ [RED]: 0, [YELLOW]: 0 })
   const [rounds, setRounds] = useState(0)
   const [botProgress, setBotProgress] = useState(null)
+  const [difficulty, setDifficulty] = useState(DEFAULT_DIFFICULTY)
 
   const gameOver = winner !== null
   const botThinking = !gameOver && currentPlayer === YELLOW
   const winningSet = new Set(winningCells.map(([r, c]) => cellKey(r, c)))
+  const botSimulations = DIFFICULTIES[difficulty - 1].simulations
 
   const drop = useCallback(
     (col, player) => {
@@ -98,7 +107,7 @@ function App() {
 
     let cancelled = false
     requestBotMove(board, false, {
-      numSimulations: BOT_SIMULATIONS,
+      numSimulations: botSimulations,
       onProgress: (done, total) => {
         if (!cancelled) setBotProgress({ done, total })
       },
@@ -111,7 +120,7 @@ function App() {
     return () => {
       cancelled = true
     }
-  }, [currentPlayer, gameOver, board, drop])
+  }, [currentPlayer, gameOver, board, drop, botSimulations])
 
   const newRound = () => {
     setBotProgress(null)
@@ -134,7 +143,7 @@ function App() {
     if (winner === YELLOW) return 'Bot wins! 🤖'
     if (botThinking) {
       const n = botProgress?.done ?? 0
-      const total = botProgress?.total ?? BOT_SIMULATIONS
+      const total = botProgress?.total ?? botSimulations
       return `Bot is thinking… (${n}/${total})`
     }
     return 'Your turn — press 0–6 to drop'
@@ -163,6 +172,24 @@ function App() {
             </div>
           </div>
         </header>
+
+        <div className="difficulty">
+          <span className="difficulty-label">Difficulty: {DIFFICULTIES[difficulty - 1].label}</span>
+          <div className="difficulty-levels">
+            {DIFFICULTIES.map(({ level }) => (
+              <button
+                type="button"
+                key={level}
+                className={`difficulty-btn ${difficulty === level ? 'active' : ''}`}
+                aria-label={`Difficulty ${level}: ${DIFFICULTIES[level - 1].label}`}
+                aria-pressed={difficulty === level}
+                onClick={() => setDifficulty(level)}
+              >
+                {level}
+              </button>
+            ))}
+          </div>
+        </div>
 
         <div className={`status-line ${gameOver ? 'over' : ''}`}>
           {botThinking && !gameOver && <span className="spinner" />}
