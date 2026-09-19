@@ -233,6 +233,7 @@
 
 .drop-slot {
   aspect-ratio: 1;
+  min-width: 0;
   border: none;
   background: transparent;
   display: flex;
