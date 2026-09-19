@@ -1,16 +1,35 @@
-# React + Vite
+# Connect 4 Web
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+A React + Vite web UI for Connect 4, playable against an AlphaZero-style bot that runs entirely client-side. Both neural network inference and MCTS search execute in the browser inside a Web Worker — there's no backend or inference server.
 
-Currently, two official plugins are available:
+## Requirements
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+Node.js >= 20.12 (Vite 8 / rolldown-vite needs `util.styleText`, added in that version).
 
-## React Compiler
+## Getting started
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+```bash
+npm install
+npm run dev       # start the Vite dev server
+```
 
-## Expanding the Oxlint configuration
+Other commands:
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and Oxlint's TypeScript related rules in your project.
+```bash
+npm run build     # production build
+npm run preview   # preview the production build
+npm run lint       # oxlint (config in .oxlintrc.json)
+```
+
+There is no test suite in this repo.
+
+## How it works
+
+The bot is a hand-written pure-JS port of a PyTorch AlphaZero-style model and MCTS search (originally trained in a sibling repo):
+
+- `src/connect4.js` — the UI-facing board engine (`ROWS x COLS` grid of `'R' | 'Y' | null'`) that drives rendering and win/draw detection.
+- `src/nn/` — the bot-facing engine: `board.js` defines a flat, current-player-relative `NumericBoard`; `network.js` implements the policy/value network forward pass (stem conv → residual blocks → policy/value heads); `mcts.js` is a PUCT MCTS search over `NumericBoard`.
+- `public/model/manifest.json` + `public/model/weights.bin` — the trained network weights, loaded once by the worker.
+- `bot.worker.js` / `botController.js` — the worker loads the weights and runs MCTS per move request; `botController.js` exposes the main-thread API that `App.jsx` calls to request bot moves.
+
+See `CLAUDE.md` for more implementation detail, including the canonical-perspective convention shared with the model's training code.
